@@ -1,0 +1,770 @@
+.TH gdsh 1 "$Date: 2008/06/22 21:00:10 $"
+.hy 0
+.\" ---------------------------------------------------------------------------
+.\" $Id: gdsh.1.templ,v 1.13 2008/06/22 21:00:10 tw Exp tw $
+.\"
+.\" Manual page for gdsh
+.\"
+.\" Copyright (C) 2008 Thomas Weidenfeller
+.\" 
+.\" This file is part of gds2000tools/gdsh.
+.\" 
+.\" gds2000tools/gdsh is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 3 as
+.\" published by the Free Software Foundation.
+.\" 
+.\" gds2000tools/gdsh is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with gds2000tools/gdsh. If not, see <http://www.gnu.org/licenses/>.
+.\" ---------------------------------------------------------------------------
+.\"
+.SH NAME
+gdsh \- GDS-800/GDS-1000/GDS-2000/DSO-4000/DSO-8000 series oscilloscope shell
+.SH SYNOPSIS
+.B gdsh
+.I bash-options " ..."
+.SH DESCRIPTION
+.B gdsh
+extends a
+.B bash
+shell with additional shell functions to communicate with
+.na
+.TP 3
+\(bu
+a GW Instek GDS-1000 series oscilloscope (GDS-1022, GDS-1042, GDS-1062,
+GDS-1102),
+.TP 3
+\(bu
+a GW Instek GDS-2000 series oscilloscope (GDS-2062, GDS-2064, GDS-2102,
+GDS-2104, GDS-2202, GDS-2204), 
+.TP 3
+\(bu
+a Voltcraft-plus DSO-4000 series oscilloscope (DSO-4022, DSO-4042,
+DSO-4062, DSO-4102),
+.TP 3
+\(bu
+a Voltcraft-plus DSO-8000 series oscilloscope (DSO-8062, DSO-8064,
+DSO-8104, DSO-8204),
+.TP 3
+\(bu
+or a GW Instek GDS-800 series oscilloscope (GDS-806, GDS-810, GDS-820, GDS-840).
+.ad
+.\"
+.PP
+Most documented plus several undocumented oscilloscope commands
+are provided via shell commands (see
+.BR gdsh (7)).
+This makes it possible to invoke
+oscilloscope commands right from an interactive shell, as well as scripting
+command sequences and more advanced measurement procedures, having the
+full power of a
+.B bash
+shell at hand. In fact,
+.B gdsh
+comes with a number of high-level functions, which are implemented on top
+of the oscilloscope commands.
+.\"
+.SS Connecting to the Oscilloscope
+The oscilloscope needs to be connected to the computer either via RS232 or
+USB. It is highly recommended to use USB. In case USB is used, the USB
+driver module
+.B cdc_acm
+(Linux),
+.BR umodem (5)/ ucom (4)
+(BSD),
+.BR usbsacm (7D)/ usba(7D)
+(Solaris),
+or a similar module implementing the CDC-ACM USB profile must be
+present
+and loaded (the default behavior on most modern *ix operating systems).
+.PP
+In case the oscilloscope is connected via USB, the connection is opened
+from within
+.B gdsh
+with the
+.PP
+.RS
+.B gds-open
+.RB [ -u "] [" /dev/tty\c
+.IR usb-dev-name ]
+.RE
+.PP
+command. In case the oscilloscope is connected via RS232, the connection
+is opened with the
+.PP
+.RS
+.na
+.B gds-open
+.RB [ -s "] ["/dev/tty\c
+.IR rs232-dev-names ]
+.RB [ baud ]
+.RB [ parity ]
+.RB [ stopbits ]
+.ad
+.RE
+.PP
+command.
+.PP
+It is possible to configure
+.B gdsh
+to automatically try to open a connection at startup. See the description of
+the
+.BR GDSH_CONNECT_AT_START ,
+.BR GDSH_DEV ,
+and 
+.B GDSH_DEV_TYPE
+environment variables in the section
+.B ENVIRONMENT
+below. The stand-alone shortcut scripts to
+.B gdsh
+functions of the same name
+.BR "require such a configuration" .
+.\"
+.SS Commands, Requests & Queries
+.TP
+Command
+A command is either a request or a query.
+.TP
+Request
+A request is a command instructing the oscilloscope to change something.
+A request does not return information. 
+.TP
+Query
+A query is a command that asks for some information from the oscilloscope.
+Query commands end in a '?' or
+.RB ( gdsh
+specific) alternatively in a '_'.
+.PP
+.B gdsh
+provides the oscilloscope commands in the form of shell functions. These
+shell functions can directly be interactively invoked form the
+.B gdsh
+command line. They can also be used in
+.B gdsh
+scripts. Most documented, plus several undocumented, oscilloscope commands
+are supported.
+Familiarity with the oscilloscope commands (see GW Instek's programming manuals)
+is a prerequisite to successfully use
+.BR gdsh .
+See
+.BR gdsh(7)
+for a comprehensive description of the commands.
+.PP
+.B gdsh
+provides a number of other functions in addition to the oscilloscope
+commands. These functions are described in the subsection
+.B GDS Functions
+below. For many of these functions
+.B gdsh
+comes with stand-alone shell script shortcuts, so these functions can also be
+called as if they are separate programs from other programs or a normal shell.
+.\"
+.SS GDS Functions
+.TP
+\fBgds-open\fP [\fB-h\fP] [([\fB-u\fP] \fIusb-device\fP) | ([\fB-s\fP] \fIrs232-device\fP [\fIbaud\fP] [\fIparity\fP] [\fIstopbits\fP])]
+Opens the device for operation.
+The device name can be omitted if the environment variable
+.B GDSH_DEV
+is set to the preferred device.
+.IR baud ", " 
+.IR parity ", and" 
+.I stopbits
+are ignored if the device name looks like a USB COM-ACM device
+.RB ( ACM ,
+.BR USB ,
+or
+.B ttyU
+in the device name) or if the
+.B -u
+option is provided.
+.IP
+The default values for RS232 devices are 19200, N, 1. Possible values for
+.I parity
+are
+.BR n ,
+.BR N ,
+.BR e ,
+.BR E ,
+.BR o ,
+.B O
+for none, even and odd respectively. Possible values for
+.I stopbits
+are
+.BR 1,
+and
+.BR 2.
+.IP
+Possible options are
+.RS
+.TP
+.B -u
+Short help text.
+.TP
+.B -u
+Force to use USB communication default parameter.
+.TP
+.B -s
+Force to use RS232 communication default parameter for those
+not provided on the command line.
+.RE
+.IP
+The environment variable
+.B $GDSH_DEV_TYPE
+can be set to either
+.BR s ,
+.BR u ,
+or
+.BR ? ,
+corresponding to the 
+.BR -s ,
+or
+.B -u 
+command line option, or to no command line option.
+.\"
+.TP
+.B gds-is-open
+Check if the communication device is open.
+.\"
+.TP
+.B gds-close
+Close the oscilloscope's communication device.
+.\"
+.TP
+.B gds-flush
+Read and discard possible oscilloscope output. All output
+that is sent not further apart than one second is discarded.
+.\"
+.TP
+.B gds-read-silent
+Read a response line from the oscilloscope, but don't
+echo it to standard output. The line is stored in the
+environment variable
+.B $GDSH_RESP
+only.
+.\"
+.TP
+.B gds-read
+Read a response line from the oscilloscope.
+The response is echoed to standard output and the line is stored
+in the environment variable
+.BR $GDSH_RESP ,
+too.
+.\"
+.TP
+\fBgds-query-silent\fP \fIquery...\fP
+Send a query, expect a single-line ASCII response in
+.B $GDSH_RESP
+only.
+.\"
+.TP
+\fBgds-query\fP \fIquery...\fP
+Send a query, expect a single-line ASCII response. The response is
+echoed to standard output and also stored in the environment
+variable
+.BR $GDSH_RESP .
+This function is useful in case a direct shell function for some
+query is missing for whatever reasons.
+.\"
+.TP
+\fBgds-query-bin\fP \fIquery\fP [\fIgds-read-bin-arguments\fP]
+Send a query, expect a binary response. The response is converted
+with
+.BR gds-read-bin (1)
+in accordance with the provided
+.IR gds-read-bin-arguments .
+.\"
+.TP
+\fBgds-send\fP (\fIquery\fP|\fIrequest\fP) [\fIarguments...\fP]
+Generic send of a command.
+This function is useful in case a direct shell function for some
+command is missing for whatever reasons.
+.IP
+If the command is a
+.I query
+(indicated by the command ending in '?' or '_', or by the first argument
+being '?' or '_'), then the query is redirected to
+.BR gds-query .
+Else it is assumed the command is a
+.IR request ,
+and the request is just send, without expecting a response.
+.\"
+.TP
+\fBgds-send-bin\fP (\fIquery\fP|\fIrequest\fP) [\fIarguments...\fP]
+Generic send of a command.
+If the command is a
+.I query
+(indicated by the command ending in '?' or '_', or by the first argument
+being '?' or '_'), then the query is redirected to
+.B gds-query-bin
+(expecting a binary response).
+Else it is assumed the command is a
+.IR request ,
+and the request is just send, without expecting a response.
+.\"
+.TP
+\fBgds-measure\fP [\fB-h\fP] [\fB-f\fP] [\fB-s\fP \fIsec\fP] [\fB-p\fP \fItimestamp-format\fP]  [\fB-F\fP \fIfieldsep\fP] (\fIch\fP (\fImeasure...\fP))...
+Obtain one or more measures from the oscilloscope. Either a single set
+of measures or continuous measures can be obtained.
+Run
+.B gds.measure -h
+in
+.BR gdsh (1)
+to get more information.
+.\"
+.TP
+.B gds-sync-time
+Synchronize (set) the oscilloscope's time with the current system time.
+.IP
+.B Note:
+The oscilloscope can take up to a minute to display the new time.
+.\"
+.TP
+.B gds-sync-date
+Synchronize (set) the oscilloscope's date with the current system date.
+.IP
+.B Note:
+The oscilloscope can take up to a minute to display the new date. The
+date display is only updated when the time display advances to the
+next minute.
+.\"
+.TP
+.B gds-sync
+Synchronize (set) the oscilloscope's date and time with the current
+system date and time.
+.IP
+.B Note:
+The oscilloscope can take up to a minute to display the new values.
+.\"
+.\"
+.TP
+.B gds-vendor
+Return oscilloscope vendor. That should usually be the string GW.
+.\"
+.TP
+.B gds-type
+Return oscilloscope type.
+.\"
+.TP
+.B gds-serialnum
+Return oscilloscope's serial number.
+.\"
+.TP
+.B gds-version, gds-firmware
+Return oscilloscope's firmware version. Should not be confused with the
+.B gdsh-version
+function.
+.\"
+.TP
+.B gdsh-version
+Return this gdsh's version. Should not be confused with the
+.B gds-version
+function.
+.\"
+.TP
+\fBgds-channels\fP [\fB-h\fP] [\fB-e\fP] [\fB-a]
+Return the number of oscilloscope channels or enumerate them.
+Depending on the options the function returns the total number of
+available channels (no option), the above information as an
+enumeration (list) of channel numbers
+.RB ( -e ),
+or an enumeration of the active (turned on) channels 
+.RB ( -a ).
+.IP
+.B Note:
+This information is partly extracted from the oscilloscope type
+information. Changes in firmware, e.g. for OEM versions of the
+oscilloscope, might result in incorrect information.
+.\"
+.TP
+.B gds-bandwidth
+Return the bandwidth of the oscilloscope.
+.IP
+.B Note:
+This information is extracted from the oscilloscope type information.
+Changes in firmware, e.g. for OEM versions of the oscilloscope,
+might result in incorrect information.
+.\"
+.TP
+\fBgds-snapshot\fP [\fB-h\fP] [\fB-c\fP \fIcolormap\fP] [\fB-n\fP] [\fIimage.bmp\fP]
+Fetches a screen snapshot from the oscilloscope and stores it
+as a BMP image file, or shows it in the default/configured
+.RB ( GDSH_IMGVIEWER
+environment variable) image viewer for
+.BR gdsh (1).
+.IP
+Run
+.B gds-snapshot -h
+in
+.BR gdsh (1)
+for more information.
+.\"
+.TP
+\fBgds-plot\fP [\fB-f\fP \fIformat\fP] [\fB-t\fP \fItitle\fP] [\fB-c\fP \fIcomment\fP] [\fIch ...\fP] [\fB--\fP] [\fIfile\fP]
+Plot one or more channel's waveforms.
+This function plots channel waveforms to one of a number of
+output devices in one of a number of formats. It requires
+.BR gnuplot (1).
+All formats/devices as supported by
+.B gnuplot
+are supported by the functions.
+Run
+.B gds-plot -h
+in
+.BR gdsh (1)
+for more information.
+.\"
+.\"
+.\"
+.\"
+.\" .SH OPTIONS
+.SH FILES
+.\"
+.TP 10
+.I bash configuration files
+Since
+.B gdsh
+is in fact a bash, normal bash configuration files apply.
+.\"
+.TP 10
+.I lib/gdsh.init
+Initialization script for
+.BR gdsh .
+This script is loaded via 
+.BR bash 's
+.I --rcfile
+command line option to initialize
+.BR gdsh .
+The script then loads other
+.B gdsh
+components and user configuration files.
+.\"
+.TP 10
+.I lib/gdsh.commands
+Contains the implementation of oscilloscope commands as
+.B bash
+functions. The function definitions are loaded by
+.I lib/gdsh.init
+at shell startup.
+.\"
+.TP 10
+.I lib/gdsh.functions 
+Contains the general functions for communicating with the 
+oscilloscope. Typically the names of these functions start with
+.RB ' gds- '.
+The function definitions are loaded by
+.I lib/gdsh.init
+at shell startup.
+.\"
+.TP 10
+.I ~/.bashrc
+Normal
+.B bash
+startup script. Loaded by
+.I lib/gdsh.init
+at 
+.B gdsh
+startup. This file should not contain any gdsh specific settings. It is
+loaded so user's common shell configurations are available in
+.BR gdsh .
+.\"
+.TP 10
+.I ~/.gdshrc
+.BR gdsh-specific
+user startup script. It is loaded after
+.I ~/.bashrc
+by
+.IR lib/gdsh.init .
+.IP
+A typical 
+.I ~/.bashrc
+file contains settings like
+.RS
+.nf
+GDSH_CONNECT_AT_START=1
+GDSH_DEV=/dev/ttyACM0
+GDSH_DEV_TYPE="u"
+.fi
+.RE
+.\"
+.\"
+.\"
+.SH BUGS
+.\"
+.\"
+.\"
+This is beta software.
+.PP
+Error handling, especially communication error handling is rudimentary, only.
+Erratic
+.B gdsh
+behavior is usually due to the connection to the device not open or the
+communication failed. In particular, a
+.I bad file descriptor
+message from
+.BR bash (1)
+is an indication of a communication problem.
+.PP
+The software wasn't tested on any GDS-800, GDS-1000, DSO-4000,
+or DSO-8000 series oscilloscope.
+.PP
+The command set is not limited to the specific oscilloscope type.
+Sending a request to an oscilloscope that doesn't understand it
+results in no action from the oscilloscope. Sending a query
+results in a
+.B gdsh
+read timeout.
+.\"
+.\"
+.\"
+.SH EXAMPLES
+Open a particular device and print the oscilloscope's
+identification from that device:
+.PP
+.RS
+.nf
+$ gdsh
+
+GDSH vx.x - GDS-2000 series oscilloscope shell
+
+gdsh@ gds-open /dev/ttyACM0
+gdsh@ _idn_
+GW,GDS-2xxx,xxxxxxxx,Vx.xx
+.fi
+.RE
+.\"
+.PP
+Continuously measure trigger frequency, and channel 1's Vpp and Vmin:
+.PP
+.RS
+.nf
+gdsh@ gds-measure -f tfreq 1 vpp vmin
+.fi
+.RE
+.\"
+.PP
+Synchronize the oscilloscope's date and time with the system date and
+time (it can take up to a minute until the new date and time are displayed
+on the oscilloscope's LCD):
+.PP
+.RS
+.nf
+gdsh@ gds-sync
+.fi
+.RE
+.\"
+.PP
+Plot the current active channels on the screen:
+.PP
+.RS
+.nf
+gdsh@ gds-plot
+.fi
+.RE
+.\"
+.PP
+Plot channels 2 and 4 into a PNG image file named
+.IR osc.png ,
+and provide a comment in the image, too:
+.PP
+.RS
+.nf
+gdsh@ gds-plot -c "Oscillator" 2 4 osc.png
+.fi
+.RE
+.\"
+.PP
+Configure the oscilloscope for some measurement, then acquire
+the data.
+.PP
+.RS
+.nf
+$ gdsh
+
+GDSH vx.x - GDS-2000 series oscilloscope shell
+
+gdsh@ gds-open /dev/ttyACM0
+gdsh@ _rst               # reset oscilloscope to defaults
+gdsh@
+gdsh@ # Timebase / horizontal configuration and trigger
+gdsh@ :tim:scal 1e-4     # 100 micro-sec/div
+gdsh@ :tim:del 150e-6    # start displaying 150 micro-sec earlier
+gdsh@ :trig:coup 0       # AC coupling for trigger
+gdsh@ :trig:mod 2        # trigger mode: normal
+gdsh@ :trig:sour 1       # trigger source channel 2
+gdsh@
+gdsh@ # Channel 1 configuration
+gdsh@ :chan1:disp 1      # activate channel
+gdsh@ :chan1:coup 0      # AC coupling
+gdsh@ :chan1:prob 1      # 10x probe
+gdsh@ :chan1:scal 5e-2   # 50mV/div vertical
+gdsh@
+gdsh@ # Channel 2 configuration
+gdsh@ :chan2:disp 1      # activate channel 2
+gdsh@ :chan2:coup 1      # DC coupling
+gdsh@ :chan2:prob 1      # 10x probe
+gdsh@ :chan2:scal 1      # 1V/div vertical
+gdsh@
+gdsh@ # Prepare acquisition
+gdsh@ :acq:mod 2         # acquisition mode: average
+gdsh@ :acq:aver 3        # average over 8 values
+gdsh@ :acq:leng 0        # 500 measurement values/channel
+gdsh@ 
+gdsh@ # Get data, scale horizontal (-h) and
+gdsh@ # vertical (-V) correct. Store result in
+gdsh@ # one file, no headers (-0)
+gdsh@ :stop              # ensure channel data is from same time
+gdsh@ :acq1:mem_ -0 -h -V `:chan1:scal_` > data.txt
+gdsh@ echo "e" >> data.txt     # place a separator in file
+gdsh@ :acq2:mem_ -0 -h -V `:chan2:scal_` >> data.txt
+gdsh@ :run 
+gdsh@ 
+gdsh@ gds-close 
+gdsh@ exit
+.fi
+.RE
+.\"
+.\"
+.\"
+.SH ENVIRONMENT
+The following environment variables could be defined in a
+user's 
+.I ~/.gdshrc
+configuration file:
+.\"
+.TP
+.B GDSH_CONNECT_AT_START
+If set, and set to non-zero, and
+.B GDSH_DEV
+is also defined, then
+.B gdsh
+tries to open the connection to
+the oscilloscope at
+.B gdsh
+startup. This is a prerequisite for using the stand-alone shortcuts.
+.\"
+.TP
+.B GDSH_DEBUG
+If set, and set to a non-zero number, then
+.B gdsh
+commands print various debugging messages during execution.
+.\"
+.TP
+.B GDSH_DEV
+The default serial device to use when non is specified as
+argument to the
+.B gds-open
+command.
+.TP
+.B GDSH_DEV_TYPE
+The default device type to use when non is specified as
+argument to the
+.B gds-open
+command. Possible values are
+.RS
+.TP
+.B s
+.B gds-open
+should assume an RS232 interface.
+.TP
+.B u
+.B gds-open
+should assume a USB interface.
+.TP
+.B ?
+.B gds-open
+should use its normal heuristic to determine the device type.
+This is equivalent to not having a
+.B  GDSH_DEV_TYPE
+environment variable at all.
+.RE
+.\"
+.TP
+.B GDSH_GNUPLOT
+Path to the
+.BR gnuplot (1)
+program to be used for the
+.B gds-plot
+function. If not given the normal
+.I PATH
+is searched for
+.BR gnuplot .
+.TP
+.B GDSH_IMGVIEWER
+Path to an image viewer program capable of displaying BMP images
+files. To be used for the
+.B gds-snapshot
+function. If not given the normal
+.I PATH
+is searched for the
+.B eog
+(eye of gnome) image viewer.
+.\"
+.TP
+.B GDSH_READ_TIMEOUT
+The number of seconds
+.B gdsh
+waits for a response to a query command.
+.PP
+.B gdsh
+stores the last response it got in the environment variable
+.BR GDSH_RESP .
+This variable can be used in case it is more convenient to work with a
+variable then to use command substitution to capture the response to
+a query command.
+.\"
+.\"
+.\"
+.SH SEE ALSO
+
+.BR bash (1),
+.BR eog (1),
+.BR gdsh (7),
+.BR gds-read-bin (1),
+.BR gnuplot (1)
+.BR ucom (4),
+.BR umodem (4),
+.BR usba (7D),
+.BR usbsacm (7D).
+.PP
+.na
+.I GDS-806/810/820/840 Programming Manual.
+VA. Good Will Instrument Co., Ltd. 2006/5/25.
+.\" <http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=255&uid=&lv=>
+.ad
+.PP
+.na
+.I GDS-1000 Series Programming Manual.
+V0. Good Will Instrument Co., Ltd. 2007/11/20.
+.\" http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=371&uid=&lv=>
+.ad
+.PP
+.na
+.I GDS-2000 Series Programming Manual.
+V0. Good Will Instrument Co., Ltd. 2006/12/13.
+.\" <http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=302&uid=&lv=>
+.ad
+.\"
+.\"
+.\"
+.SH COPYRIGHT
+Copyright \(co 2008 Thomas Weidenfeller
+.PP
+gds2000tools/gdsh is free software: you can redistribute it and/or modify
+it under the terms of the \s-1GNU\s0 General Public License version
+.B 3
+as published by the Free Software Foundation.
+.PP
+gds2000tools/gdsh is distributed in the hope that it will be useful,
+but \s-1WITHOUT\s0 \s-1ANY\s0 \&\s-1WARRANTY\s0; without even the
+implied warranty of \s-1MERCHANTABILITY\s0 or \s-1FITNESS\s0 \s-1FOR\s0
+A \&\s-1PARTICULAR\s0 \s-1PURPOSE\s0. See the \s-1GNU\s0 General Public
+License for more details.
+.PP
+You should have received a copy of the GNU General Public License along
+with gds2000tools/gdsh. If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" -------------------------------------------------------------------

@@ -1,0 +1,30 @@
+#!/bin/sh
+################################################################################
+# $Id: configure,v 1.3 2008/05/31 00:38:42 tw Exp $
+#
+# Dummy to point to the right way to configure gdsh2000tools.
+#
+# Copyright (C) 2008 Thomas Weidenfeller
+# 
+# This file is part of gds2000tools.
+# 
+# gds2000tools is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
+# 
+# gds2000tools is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with gds2000tools.  If not, see <http://www.gnu.org/licenses/>.
+###############################################################################
+
+cat >&2 <<!
+
+The 'configure' command is not supported.
+Please edit 'config.mk' instead.
+
+!
+exit 1

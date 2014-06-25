@@ -1,0 +1,382 @@
+.TH gds-read-bin 1 "$Date: 2008/06/22 21:00:10 $" "" gds2000tools
+.\" ---------------------------------------------------------------------------
+.\" $Id: gds-read-bin.1,v 1.9 2008/06/22 21:00:10 tw Exp tw $
+.\"
+.\" Manual page for gds-read-bin
+.\"
+.\" Copyright (C) 2008 Thomas Weidenfeller
+.\" 
+.\" This file is part of gds2000tools/gds-read-bin.
+.\" 
+.\" gds2000tools/gds-read-bin is free software: you can redistribute it
+.\" and/or modify it under the terms of the GNU General Public License
+.\" version 3 as
+.\" published by the Free Software Foundation.
+.\" 
+.\" gds2000tools/gds-read-bin is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with gds2000tools/gds-read-bin. If not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" ---------------------------------------------------------------------------
+.\"
+.SH NAME
+gds-read-bin \- GDS-2000 series oscilloscope binary data reading filter
+.\"
+.\"
+.\"
+.SH SYNOPSIS
+.hy 0
+.\"
+.B gds-read-bin
+.RB [ "-f mem" ]
+.RB [ -F
+.IR fieldsep ]
+.RB [ -0 ]
+.RB [ -h ]
+.RB [( -v
+.IR scale )
+.RB "| (" -V
+.IR 25scale )]
+.br
+.B gds-read-bin -f outp
+.RB [ -c
+.IR colormap ]
+.\"
+.\"
+.\"
+.SH DESCRIPTION
+.\"
+.SS Overview
+.\"
+The GW Instek GDS-2000 series of oscilloscopes (and the GDS-8x0
+oscilloscope and OEM versions) usually send data as ASCII text. There are,
+however some exceptions. This filter handles oscilloscope data for
+two such exceptions:
+.TP 4
+1.
+Sample waveform data in response to a
+.I :ACQuire<X>:MEMory?
+(GDS-2000 series) or
+.I :ACQuire<X>:POINt?
+(GDS-8x0) query.
+.TP 4
+2.
+Screen snapshot data in response to an (undocumented)
+.I :DISPlay:OUTPut?
+query.
+.PP
+.B gds-read-bin
+expects that its standard input is connected to a tty device.
+It reads data from this device, expecting GDS-2000 series oscilloscope
+binary data. It only reads as much data as indicated in the binary
+data itself. To do so
+.B gds-read-bin
+reconfigures the serial device's incoming direction into 'raw' mode,
+to ensure no data is accidentally converted by the line discipline. At
+exit
+.B gds-read-bin
+restores the original configuration of the device.
+.PP
+The filter does not send the above mentioned queries. It expects a
+query has been send by other means. It just processes the response to
+the query and converts it, depending on the
+.B -f
+option and the data.
+The result is written to the filter's standard output.
+.PP
+The most convenient way to use the filter is via
+.BR gdsh (1).
+.BR gdsh (1)
+automatically uses the filter for handling the responses to the above
+mentioned queries.
+.\"
+.SS Sampling Waveform Data
+The option
+.B -f mem
+or no
+.B -f
+option at all indicates to
+.B gds-read-bin
+to expect and convert sampling waveform data
+.RI ( :ACQuire<X>:MEMory
+(GDS-2000 series) or
+.I :ACQuire<X>:POINt
+(GDS-8x0) query response). It converts the
+respective received binary data into ASCII data.
+.PP
+If no further options are specified then
+.B gds-read-bin
+produces an ASCII output of the following form. Items reproduced here
+in bold are generated verbatim, while items in italic (underlined)
+are placeholders for actual values:
+.PP
+.RS
+.nf
+.BI Interval " horizontalInterval"
+.BI Channel " channelNbr"
+.BI Length " nbrOfDatapoints"
+.BI 0 " value0"
+.BI 1 " value1"
+.I ...
+.I nbrOfDatapoints-1 valueForNbrOfDatapoints-1
+.fi
+.RE
+.PP
+The placeholders have the following meanings and can take the following
+values:
+.RS
+.TP
+.I horizontalInterval
+The horizontal (x axis) time duration between two data points in seconds.
+Usually a floating point number with exponent is printed. Please note
+that this value is usually not identical to the horizontal time division.
+.TP
+.I channelNbr
+The oscilloscopes channel from which the data was take. E.g.
+.B 1
+for channel 1.
+.TP
+.I nbrOfDatapoints
+The number of obtained waveform data points. Typical values are 500 (for
+.IR ":ACQuire:LENGth 0" )
+and 5000 (three or for channels active), 12500 (two channels active),
+or 25000 (one channel active) for
+.IR ":ACQuire:LENGth 1" .
+.TP
+.I valueX
+The value at horizontal position
+.IR X .
+Values are provided by the oscilloscope as integers in the range -32768
+to 32767. A value should be multiplied by 1/25 of the vertical scale in
+Volts/div
+.RI ( :CHANnel<X>:SCALe? )
+to get the actual value in Volts (see
+.B -v
+and
+.B -V
+options below).
+.RE
+.PP
+The above describe output format can be changed by using several options,
+described later in this manual page.
+.\"
+.SS Screen Snapshot
+If the option
+.B -f outp
+is specified, then
+.B gds-read-bin
+expects to receive screen snapshot image data from the oscilloscope as a
+response to an
+.I :DISPlay:OUTPut?
+query. The data is converted into the BMP image format.
+.PP
+Screenshot image data can come in two formats from the oscilloscope, depending
+which value was set for
+.IR  :DISPlay:OUTPut .
+When 
+.I  :DISPlay:OUTPut
+is set to 0 the data from the oscilloscope does not contain graticule and trigger
+mark information.
+The other format
+.RI ( :DISPlay:OUTPut
+set to 1) contains the graticule and trigger marker.
+.PP
+.B gds-read-bin
+accepts both formats and creates images from both of them. But images
+obtained when
+.I  :DISPlay:OUTPut 0
+is set naturally don't show the graticule and trigger markers.
+.\"
+.\"
+.\"
+.SH OPTIONS
+.\"
+.SS Format Option
+.TP
+.BI -f " format"
+Specifies which data format
+.B gds-read-bin
+expects and in which format it converts the data. The following
+.I format
+arguments are possible:
+.RS
+.TP
+.B mem
+Expect and convert sample waveform data to ASCII. This is also the
+default if no
+.B -f
+option is specified.
+.TP
+.B outp
+Expect and convert a screen snapshot into BMP image data.
+.RE
+.\"
+.SS Sample Waveform Data specific Options
+The following options only apply to the generation of ASCII data from
+sample waveform input data.
+.TP
+.BR -0 "
+(zero) The initial three lines with the Interval, Channel and Length
+information are not printed.
+.TP
+.BI -F " fieldsep"
+Changes the default field separator from a single space to
+.IR fieldsep .
+The three header lines (Interval, Channel and Length), as well as the data
+point lines are affected by this. The separator can be multiple characters
+long.
+.TP
+.B -h
+The horizontal position values (x axis, first column) are multiplied
+by the horizontal interval. This gives the horizontal values in Seconds.
+.TP
+.BI -v " scale"
+The data points (y axis, second column) are multiplied by the
+.I scale
+value.
+.TP
+.BI -V " 25scale"
+The data points (y axis, second column) are multiplied by 1/25 of the
+.I 25scale
+value. This option is useful with the value returned by
+.IR :CHANnel<X>:SCALe? .
+Using that value as
+.I 25scale
+argument gives the vertical values in Volts without the need of
+further scaling.
+.\"
+.SS Screenshot Image Data specific Option
+The following option only applies to the generation of BMP image data
+from screenshot image data.
+.TP
+.BI -c " colormap"
+Specifies which colormap should be used to create the image.
+The available colormaps are build into
+.BR gds-read-bin .
+The following
+.I colormap
+arguments are understood:
+.RS
+.TP
+.B standard
+The standard (dark) colormap that matches the color on the oscilloscope's
+screen. This is also the default if not
+.B -c
+option is specified.
+.TP
+.B improved
+A slightly lighter colormap.
+.TP
+.B inksave
+A colormap matching the inksave option of the oscilloscope when it saves
+screen snapshots to USB memory sticks.
+.RE
+.\"
+.\"
+.\"
+.\" .SH BUGS
+.\"
+.\"
+.\" .SH FILES
+.\"
+.SH EXAMPLES
+.\"
+The following usage of
+.BR gdsh (1)
+implicitly uses
+.BR gds-read-bin :
+.PP
+.nf
+$ gdsh
+
+GDSH vx.x - GDS-2000 series oscilloscope shell
+
+gdsh@ gds-open /dev/ttyACM0
+gdsh@ :chan1:disp 1	# turn on display of channel 1
+gdsh@ :aut		# autoset
+gdsh@ :acq:leng 1	# set record length to max
+gdsh@ :acq1:mem_ -h -V `:chan1:scal_`	# get data from channel 1
+Interval 4e-07
+Channel 1
+Length 25000
+0 0
+4e-07 1.52
+8e-07 1.96
+.I ...
+.fi
+.PP
+The following normal shell example explicitly uses
+.B gds-read-bin 
+without any safety net:
+.PP
+.nf
+$ echo ":ACQ1:MEM?" > /dev/ttyACM0
+$ gds-read-bin < /dev/ttyACM0
+Interval 2e-05
+Channel 1
+Length 500
+0 0
+1 38
+2 49
+.I ...
+.fi
+.PP
+The following normal shell example explicitly uses
+.B gds-read-bin 
+without any safety net to generate a screen snapshot image file
+.I snap.bmp
+with the inksave colormap. Note that first of all the output
+format is set to include graticule and trigger marker information.
+.PP
+.nf
+$ echo ":DISP:OUTP 1;:DISP:OUTP?" > /dev/ttyACM0
+$ gds-read-bin -f outp -c inksave < /dev/ttyACM0 > snap.bmp
+.fi
+.\"
+.\"
+.\"
+.SH SEE ALSO
+.BR gdsh (1).
+.PP
+.na
+.I GDS-806/810/820/840 Programming Manual.
+VA. Good Will Instrument Co., Ltd. 2006/5/25.
+.\" <http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=255&uid=&lv=>
+.ad
+.PP
+.na
+.I GDS-1000 Series Programming Manual.
+V0. Good Will Instrument Co., Ltd. 2007/11/20.
+.\" http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=371&uid=&lv=>
+.ad
+.PP
+.na
+.I GDS-2000 Series Programming Manual.
+V0. Good Will Instrument Co., Ltd. 2006/12/13.
+.\" <http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=302&uid=&lv=>
+.ad
+.\"
+.\"
+.\"
+.SH COPYRIGHT
+Copyright \(co 2008 Thomas Weidenfeller
+.PP
+gds2000tools/gdsh is free software: you can redistribute it and/or modify
+it under the terms of the \s-1GNU\s0 General Public License version
+.B 3
+as published by the Free Software Foundation.
+.PP
+gds2000tools/gdsh is distributed in the hope that it will be useful,
+but \s-1WITHOUT\s0 \s-1ANY\s0 \&\s-1WARRANTY\s0; without even the
+implied warranty of \s-1MERCHANTABILITY\s0 or \s-1FITNESS\s0 \s-1FOR\s0
+A \&\s-1PARTICULAR\s0 \s-1PURPOSE\s0. See the \s-1GNU\s0 General Public
+License for more details.
+.PP
+You should have received a copy of the GNU General Public License along
+with gds2000tools/gdsh. If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" -------------------------------------------------------------------

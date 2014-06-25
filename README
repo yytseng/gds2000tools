@@ -1,0 +1,150 @@
+$Id: README,v 1.6 2008/06/22 21:00:10 tw Exp tw $
+
+Copyright (C) 2008 Thomas Weidenfeller
+
+
+				gds2000tools
+_______________________________________________________________________________
+
+gds2000tools is a set of free software tools for usage with the GW Instek
+GDS-2000 series oscilloscopes (GDS-2062, GDS-2064, GDS-2102, GDS-2104,
+GDS-2202, GDS-2204).
+
+The tools should also work (not tested) with the Voltcraft-plus DSO-8000
+series oscilloscopes (DSO-8062, DSO-8064, DSO-8104, DSO-8204), GW
+Instek GDS-1000 series oscilloscopes (GDS-1022, GDS-1042, GDS-1062,
+GDS-1102), Voltcraft-plus DSO-4000 series oscilloscopes (DSO-4022,
+DSO-4042, DSO-4062, DSO-4102), and GW Instek GDS-800 series oscilloscopes
+(GDS-806, GDS-810, GDS-820, GDS-840).
+
+The tools are:
+
+	gdsh	A set of bash shell functions to create a shell
+		for sending and receiving data to/from the oscilloscope.
+
+		Some features are:
+
+		* Most GDS-8x0, all GDS-1000, and all GDS-2000
+		  request and query commands as defined in the
+		  programming manuals supported.
+
+		* Several undocumented commands supported.
+
+		* Obtaining screen snapshots (gds-snapshot function)
+
+		* Plotting waveform data (gds-plot function)
+
+		* Syncing the oscilloscope's date and time from the
+		  comuter's system time (gds-sync* functions).
+
+		* Obtaining measures. Either as single measures or
+		  at fixed intervals. 25+ measurement types are
+		  supported (gds-measure fucntion).
+
+	gds-read-bin
+		A filter for reading binary waveform data and
+		binary screen snapshot data from the oscilloscope and
+		convert the data to ASCII. gdsh uses this filter.
+
+	gds-bandwidth	gds-channels	gds-csv		gds-firmware
+	gds-flush	gds-measure	gds-plot	gds-query
+	gds-read-bin	gds-send	gds-serialnum	gds-snapshot
+	gds-sync	gds-sync-date	gds-sync-time	gds-type
+	gds-vendor	gds-version
+		Shortcuts to gdsh functions of the same name.
+
+_______
+License
+
+gds2000tools is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 3 as
+published by the Free Software Foundation.
+ 
+gds2000tools is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with gds2000tools.  If not, see <http://www.gnu.org/licenses/>.
+
+
+See the file COPYING for a copy of the GPL version 3. Please note that
+gds2000tools comes without the option to select a later version of
+the GPL.
+
+________________
+Required Reading
+
+gdsh(1) manual page
+
+gdsh(7) manual page
+
+GDS-806/810/820/840 Programming Manual. VA. Good Will Instrument Co.,
+Ltd. 2006/5/25.
+
+GDS-1000 Series Programming Manual. V0. Good Will Instrument Co.,
+Ltd. 2007/11/20.
+
+GDS-2000 Series Programming Manual. V0. Good Will Instrument Co., Ltd.
+2006/12/13.
+
+You will not be able to use most of the software without being familiar
+with the commands described in the above manuals.
+
+______________
+Hardware Setup
+
+The tools should support the RS232 and the USB interface. The USB
+interface in the GDS-2000 series oscilloscopes implements a serial
+interface (CDC-ACM USB profile). Current Linux and BSD distributions
+already come with the necessary driver to handle the profile and
+provide the mapping to a "terminal" device. It is highly recommended
+to use the USB connection for performance reasons.
+
+_____________
+Prerequisites
+
+At least the following items are needed to build and make use of the
+software:
+
+* A supported oscilloscope
+
+* GNU make
+
+* GNU C compiler
+
+* bash 3.0 or later
+
+* gnuplot http://www.gnuplot.info/
+
+* eog or another image viewer capable of displaying BMP images
+
+* GNU versions of misc. Unix text processing tools
+
+____________
+Installation
+
+* Edit the installation section in the file config.mk in this
+  directory
+
+* Run
+	make clean
+	makes
+
+  from this directory.
+
+* If configured to be installed in a public directory (default in config.mk)
+  become superuser
+
+* Run
+	make install
+
+  to install.
+
+* For each user create a $HOME/.gdshrc file with the following contents
+
+  GDSH_CONNECT_AT_START=1
+  GDSH_DEV=<device to which oscilloscope is connected, e.g /dev/ttyACM0>
+
+  Note: Only one user can use the oscilloscope at the same time.

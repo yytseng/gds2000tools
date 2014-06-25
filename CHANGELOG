@@ -1,0 +1,60 @@
+$Id: CHANGELOG,v 1.6 2008/06/22 21:00:10 tw Exp tw $
+
+v0.3
+
+gdsh:
+
+- Oscilloscope screen snapshot command added, using an
+  undocumented query.
+
+- GDS-1000 oscilloscope series commands added
+
+- Documentation update
+
+- Default speed for RS232 connection is now 19200, not 9600.
+
+- Renamed internal command wrapper
+
+- gds-open now handles stop-bit parameter correct
+
+- gds-open now has -s/-u options to either force RS232 or USB
+  default parameters
+
+- gds-plot -t option fixed
+
+- gds-plot output file no longer ignored
+
+gds-read-bin:
+
+- gds-read-bin can now handle screen snapshot data
+
+v0.2
+
+gdsh:
+
+- Fixed installation of gdsh-cdm-wrapper
+
+- Fixed check if GDSH_CONNECT_AT_START is undefined in
+  gdsh.init. 
+
+- Some more command descriptions added to gdsh.7 man page.
+
+- stty in gdsh no longer uses -iutf8, as this is not supported
+  by all sttys
+
+- stty result code check corrected.
+
+- install now works with broken SysV install(1M), too.
+
+gds-read-bin:
+
+- Endian defines are taken from sys/isa_defs.h on Solaris, as Solaris
+  doesn't have endian.h
+
+- Read timeout reduced from five seconds to two.
+
+- install now works with broken SysV install(1M), too.
+
+v0.1
+
+Initial release.

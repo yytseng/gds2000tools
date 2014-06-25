@@ -1,0 +1,973 @@
+.TH gdsh 1 "$Date: 2008/06/22 21:00:10 $"
+.\" ---------------------------------------------------------------------------
+.\" $Id: gdsh.7.templ,v 1.3 2008/06/22 21:00:10 tw Exp tw $
+.\"
+.\" Manual page for gdsh oscilloscope commands
+.\"
+.\" Copyright (C) 2008 Thomas Weidenfeller
+.\" 
+.\" This file is part of gds2000tools/gdsh.
+.\" 
+.\" gds2000tools/gdsh is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 3 as
+.\" published by the Free Software Foundation.
+.\" 
+.\" gds2000tools/gdsh is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with gds2000tools/gdsh. If not, see <http://www.gnu.org/licenses/>.
+.\" ---------------------------------------------------------------------------
+.\"
+.SH NAME
+gdsh \- GDS-800/GDS-1000/GDS-2000/DSO-4000/DSO-8000 series oscilloscope
+command functions in gdsh
+.SH SYNOPSIS
+.B gdsh
+.I bash-options " ..."
+.SH DESCRIPTION
+.SS Overview
+.B gdsh
+maps the oscilloscope commands to the shell functions as documented in
+this manual page.
+.PP
+Most
+documented, plus several undocumented, oscilloscope commands are supported.
+Familiarity with the oscilloscope commands (see GW Instek's
+.IR "GDS-806/810/820/840 Programming Manual" ,
+.IR "GDS-1000 Series Programming Manual" ,
+and
+.IR "GDS-2000 Series Programming Manual" )
+is a prerequisite to successfully use the commands as provided by
+.BR gdsh .
+.\"
+.SS Mapping Schema
+The shell function names for oscilloscope commands are similar to, but
+not 100% identical and flexible as the SCPI-style command names as given
+the programming manuals. The shell function names are constructed as
+it follows:
+.TP 3
+\(bu
+All shell function names are in lower case. Uppercase versions are not
+provided. For example, the oscilloscope command
+.I :USB:SAVe:WAVeform
+is provided by the shell function
+.B :usb:save:waveform 
+.TP 3
+\(bu
+In addition to the full-length command, the shortest possible abbreviation
+is also provided as a shell function. That shell function is identical
+to the full-length function name. For example, the above mentioned
+oscilloscope command
+.I :USB:SAVe:WAVeform
+is not only provided by the shell function
+.BR :usb:save:waveform ,
+but also by the shell function
+.BR :usb:sav:wav ,
+and both shell functions are identical. Other abbreviations than the
+shortest possible on (e.g. :usb:save:wav) are not supported.
+.IP
+.B Note:
+The ':' alone has a special meaning in the shell. However
+.B bash
+doesn't seem to mind at all if a function name starts with a ':'.
+.\"
+.TP 3
+\(bu
+Query commands end in a question mark, and
+.B gdsh
+does provide shell functions which indeed end in a question mark. For
+example,
+.B gdsh
+provides the query
+.I :MEASure:VMAX?
+via the shell functions
+.B :measure:vmax?
+and
+.BR :meas:vmax?.
+However, a question mark is a wildcard for the shell. So, to avoid that
+the user has to quote the question mark in the function name, additional
+function versions are provided, too. There the question mark is replaced
+with an underscore. So four shell functions are provided for the query
+command
+.IR :MEASure:VMAX? :
+.IP
+.BR :measure:vmax? ,
+.BR :meas:vmax? ,
+.BR :measure:vmax_ ,
+and
+.BR :meas:vmax_ .
+.IP
+All are identical.
+.\"
+.TP 3
+\(bu
+Some commands start with a '*', for example
+.IR *IDN? .
+The star also has a special meaning for the shell, although 
+.B bash
+apparently doesn't mind if a function name starts with a '*'. However,
+it might be interpreted as a wildcard and requires extra quotation.
+Alternative functions are provided in addition to avoid having to type
+the extra quotations.
+.IP
+For example, for the 
+.I *IDN?
+command the two shell functions
+.B *idn?
+and
+.B _idn_
+are provided.
+.\"
+.SS Oscilloscope Commands & Shell Functions
+.\"
+.hy 0
+.TP
+\fB*CLS\fP \- Clear status registers.
+.na
+*cls, _cls
+.ad
+.TP
+\fB*ESE\fP \- Event status enable register.
+.na
+*ese, _ese, *ese?, _ese?, *ese_, _ese_
+.ad
+.TP
+\fB*ESR\fP \- Standard event status register.
+.na
+*esr?, _esr?, *esr_, _esr_
+.ad
+.TP
+\fB*IDN\fP \- Get oscilloscope identification.
+.na
+*idn?, _idn?, *idn_, _idn_
+.ad
+.TP
+\fB*LRN\fP \- Get most oscilloscope settings.
+.na
+*lrn?, _lrn?, *lrn_, _lrn_
+.ad
+.TP
+\fB*OPC\fP \- Operation complete bit.
+.na
+*opc, _opc, *opc?, _opc?, *opc_, _opc_
+.ad
+.TP
+\fB*RCL\fP \- Recall settings from memory.
+.na
+*rcl, _rcl
+.ad
+.TP
+\fB*RST\fP \- Reset oscilloscope to factory defaults.
+.na
+*rst, _rst
+.ad
+.TP
+\fB*SAV\fP \- Store current settings into memory.
+.na
+*sav, _sav
+.ad
+.TP
+\fB*SRE\fP \- Service request enable register.
+.na
+*sre, _sre, *sre?, _sre?, *sre_, _sre_
+.ad
+.TP
+\fB*STB\fP \- Status byte register.
+.na
+*stb?, _stb?, *stb_, _stb_
+.ad
+.TP
+\fB*TRG\fP \- GDS-1000: Manually trigger and display the result. GDS-2000: Undocumented, same as :STOP.
+.na
+*trg, _trg
+.ad
+.TP
+\fB*WAI\fP \- Wait until all pending overlapped commands are finished.
+.na
+*wai, _wai
+.ad
+.TP
+\fB:ACQuire:AVERage\fP \- Number of aquisitions for average aquisition.
+.na
+:acquire:average, :acquire:average?, :acquire:average_, :acq:aver, :acq:aver?, :acq:aver_
+.ad
+.TP
+\fB:ACQuire:LENGth\fP \- Number of samples.
+.na
+:acquire:length, :acquire:length?, :acquire:length_, :acq:leng, :acq:leng?, :acq:leng_
+.ad
+.TP
+\fB:ACQuire:MODe\fP \- Aquisition mode.
+.na
+:acquire:mode, :acquire:mode?, :acquire:mode_, :acq:mod, :acq:mod?, :acq:mod_
+.ad
+.TP
+\fB:ACQuire<X>:MEMory\fP \- Read the aquired waveform data.
+.na
+:acquire1:memory?, :acquire1:memory_, :acq1:mem?, :acq1:mem_, :acquire2:memory?, :acquire2:memory_, :acq2:mem?, :acq2:mem_, :acquire3:memory?, :acquire3:memory_, :acq3:mem?, :acq3:mem_, :acquire4:memory?, :acquire4:memory_, :acq4:mem?, :acq4:mem_
+.ad
+.TP
+\fB:ACQuire<X>:POINt\fP \- Read the aquired waveform data.
+.na
+:acquire1:point?, :acquire1:point_, :acq1:poin?, :acq1:poin_, :acquire2:point?, :acquire2:point_, :acq2:poin?, :acq2:poin_, :acquire3:point?, :acquire3:point_, :acq3:poin?, :acq3:poin_, :acquire4:point?, :acquire4:point_, :acq4:poin?, :acq4:poin_
+.ad
+.TP
+\fB:AUToset\fP \- Automatic setup.
+.na
+:autoset, :aut
+.ad
+.TP
+\fB:CHANnel<X>:BWLimit\fP \- Enable/disable bandwidth limiting.
+.na
+:channel1:bwlimit, :channel1:bwlimit?, :channel1:bwlimit_, :chan1:bwl, :chan1:bwl?, :chan1:bwl_, :channel2:bwlimit, :channel2:bwlimit?, :channel2:bwlimit_, :chan2:bwl, :chan2:bwl?, :chan2:bwl_, :channel3:bwlimit, :channel3:bwlimit?, :channel3:bwlimit_, :chan3:bwl, :chan3:bwl?, :chan3:bwl_, :channel4:bwlimit, :channel4:bwlimit?, :channel4:bwlimit_, :chan4:bwl, :chan4:bwl?, :chan4:bwl_
+.ad
+.TP
+\fB:CHANnel<X>:COUPling\fP \- Measurement coupling.
+.na
+:channel1:coupling, :channel1:coupling?, :channel1:coupling_, :chan1:coup, :chan1:coup?, :chan1:coup_, :channel2:coupling, :channel2:coupling?, :channel2:coupling_, :chan2:coup, :chan2:coup?, :chan2:coup_, :channel3:coupling, :channel3:coupling?, :channel3:coupling_, :chan3:coup, :chan3:coup?, :chan3:coup_, :channel4:coupling, :channel4:coupling?, :channel4:coupling_, :chan4:coup, :chan4:coup?, :chan4:coup_
+.ad
+.TP
+\fB:CHANnel<X>:DISPlay\fP \- Channels to sample and display.
+.na
+:channel1:display, :channel1:display?, :channel1:display_, :chan1:disp, :chan1:disp?, :chan1:disp_, :channel2:display, :channel2:display?, :channel2:display_, :chan2:disp, :chan2:disp?, :chan2:disp_, :channel3:display, :channel3:display?, :channel3:display_, :chan3:disp, :chan3:disp?, :chan3:disp_, :channel4:display, :channel4:display?, :channel4:display_, :chan4:disp, :chan4:disp?, :chan4:disp_
+.ad
+.TP
+\fB:CHANnel<X>:INVert\fP \- Waveform inversion.
+.na
+:channel1:invert, :channel1:invert?, :channel1:invert_, :chan1:inv, :chan1:inv?, :chan1:inv_, :channel2:invert, :channel2:invert?, :channel2:invert_, :chan2:inv, :chan2:inv?, :chan2:inv_, :channel3:invert, :channel3:invert?, :channel3:invert_, :chan3:inv, :chan3:inv?, :chan3:inv_, :channel4:invert, :channel4:invert?, :channel4:invert_, :chan4:inv, :chan4:inv?, :chan4:inv_
+.ad
+.TP
+\fB:CHANnel<X>:MATH\fP \- Math operation selection.
+.na
+:channel1:math, :channel1:math?, :channel1:math_, :chan1:math, :chan1:math?, :chan1:math_, :channel2:math, :channel2:math?, :channel2:math_, :chan2:math, :chan2:math?, :chan2:math_, :channel3:math, :channel3:math?, :channel3:math_, :chan3:math, :chan3:math?, :chan3:math_, :channel4:math, :channel4:math?, :channel4:math_, :chan4:math, :chan4:math?, :chan4:math_
+.ad
+.TP
+\fB:CHANnel<X>:OFFSet\fP \- Vertical display offset.
+.na
+:channel1:offset, :channel1:offset?, :channel1:offset_, :chan1:offs, :chan1:offs?, :chan1:offs_, :channel2:offset, :channel2:offset?, :channel2:offset_, :chan2:offs, :chan2:offs?, :chan2:offs_, :channel3:offset, :channel3:offset?, :channel3:offset_, :chan3:offs, :chan3:offs?, :chan3:offs_, :channel4:offset, :channel4:offset?, :channel4:offset_, :chan4:offs, :chan4:offs?, :chan4:offs_
+.ad
+.TP
+\fB:CHANnel<X>:PROBe\fP \- Probe attenuation factor.
+.na
+:channel1:probe, :channel1:probe?, :channel1:probe_, :chan1:prob, :chan1:prob?, :chan1:prob_, :channel2:probe, :channel2:probe?, :channel2:probe_, :chan2:prob, :chan2:prob?, :chan2:prob_, :channel3:probe, :channel3:probe?, :channel3:probe_, :chan3:prob, :chan3:prob?, :chan3:prob_, :channel4:probe, :channel4:probe?, :channel4:probe_, :chan4:prob, :chan4:prob?, :chan4:prob_
+.ad
+.TP
+\fB:CHANnel<X>:SCALe\fP \- Vertical scale.
+.na
+:channel1:scale, :channel1:scale?, :channel1:scale_, :chan1:scal, :chan1:scal?, :chan1:scal_, :channel2:scale, :channel2:scale?, :channel2:scale_, :chan2:scal, :chan2:scal?, :chan2:scal_, :channel3:scale, :channel3:scale?, :channel3:scale_, :chan3:scal, :chan3:scal?, :chan3:scal_, :channel4:scale, :channel4:scale?, :channel4:scale_, :chan4:scal, :chan4:scal?, :chan4:scal_
+.ad
+.TP
+\fB:COPY\fP \- Generate a hardcopy of the screen.
+.na
+:copy
+.ad
+.TP
+\fB:CURSor:SOURce\fP \- Channel for which to measure with cursor.
+.na
+:cursor:source, :cursor:source?, :cursor:source_, :curs:sour, :curs:sour?, :curs:sour_
+.ad
+.TP
+\fB:CURSor:X<X>Position\fP \- Horizontal cursor position.
+.na
+:cursor:x1position, :cursor:x1position?, :cursor:x1position_, :curs:x1p, :curs:x1p?, :curs:x1p_, :cursor:x2position, :cursor:x2position?, :cursor:x2position_, :curs:x2p, :curs:x2p?, :curs:x2p_
+.ad
+.TP
+\fB:CURSor:XDELta\fP \- Difference between the two horizontal cursors.
+.na
+:cursor:xdelta?, :cursor:xdelta_, :curs:xdel?, :curs:xdel_
+.ad
+.TP
+\fB:CURSor:XDELTa\fP \- Difference between the two horizontal cursors.
+.na
+:cursor:xdelta?, :cursor:xdelta_, :curs:xdelt?, :curs:xdelt_
+.ad
+.TP
+\fB:CURSor:XDISplay\fP \- Horizontal cursor on/off.
+.na
+:cursor:xdisplay, :cursor:xdisplay?, :cursor:xdisplay_, :curs:xdis, :curs:xdis?, :curs:xdis_
+.ad
+.TP
+\fB:CURSor:XDISPlay\fP \- Horizontal cursor on/off.
+.na
+:cursor:xdisplay, :cursor:xdisplay?, :cursor:xdisplay_, :curs:xdisp, :curs:xdisp?, :curs:xdisp_
+.ad
+.TP
+\fB:CURSor:Y<X>Position\fP \- Vertical cursor position.
+.na
+:cursor:y1position, :cursor:y1position?, :cursor:y1position_, :curs:y1p, :curs:y1p?, :curs:y1p_, :cursor:y2position, :cursor:y2position?, :cursor:y2position_, :curs:y2p, :curs:y2p?, :curs:y2p_
+.ad
+.TP
+\fB:CURSor:YDELta\fP \- Difference between the two vertical cursors.
+.na
+:cursor:ydelta?, :cursor:ydelta_, :curs:ydel?, :curs:ydel_
+.ad
+.TP
+\fB:CURSor:YDELTa\fP \- Difference between the two vertical cursors.
+.na
+:cursor:ydelta?, :cursor:ydelta_, :curs:ydelt?, :curs:ydelt_
+.ad
+.TP
+\fB:CURSor:YDISplay\fP \- Vertical cursor on/off.
+.na
+:cursor:ydisplay, :cursor:ydisplay?, :cursor:ydisplay_, :curs:ydis, :curs:ydis?, :curs:ydis_
+.ad
+.TP
+\fB:CURSor:YDISPlay\fP \- Vertical cursor on/off.
+.na
+:cursor:ydisplay, :cursor:ydisplay?, :cursor:ydisplay_, :curs:ydisp, :curs:ydisp?, :curs:ydisp_
+.ad
+.TP
+\fB:DISPlay:ACCumulate\fP \- Display accumulated waveform data.
+.na
+:display:accumulate, :display:accumulate?, :display:accumulate_, :disp:acc, :disp:acc?, :disp:acc_
+.ad
+.TP
+\fB:DISPlay:CONTrast\fP \- Adjust LCD contrast.
+.na
+:display:contrast, :display:contrast?, :display:contrast_, :disp:cont, :disp:cont?, :disp:cont_
+.ad
+.TP
+\fB:DISPlay:CONTrast:DATa\fP \- Set LCD contrast (GDS-8x0 only)
+.na
+:display:contrast:data, :display:contrast:data?, :display:contrast:data_, :disp:cont:dat, :disp:cont:dat?, :disp:cont:dat_
+.ad
+.TP
+\fB:DISPlay:GRATicule\fP \- Display grid style.
+.na
+:display:graticule, :display:graticule?, :display:graticule_, :disp:grat, :disp:grat?, :disp:grat_
+.ad
+.TP
+\fB:DISPlay:OUTPut\fP \- Set screen snapshot format or get screen snapshot (undocumented).
+.na
+:display:output, :display:output?, :display:output_, :disp:outp, :disp:outp?, :disp:outp_
+.ad
+.TP
+\fB:DISPlay:WAVeform\fP \- Waveform drawing mode.
+.na
+:display:waveform, :display:waveform?, :display:waveform_, :disp:wav, :disp:wav?, :disp:wav_
+.ad
+.TP
+\fB:FORCe\fP \- Manually trigger and display signal.
+.na
+:force, :forc
+.ad
+.TP
+\fB:GONogo:CLEar\fP \- Clear go/no-go counters.
+.na
+:gonogo:clear, :gon:cle
+.ad
+.TP
+\fB:GONogo:EXECute\fP \- Start/Stop go/no-go test.
+.na
+:gonogo:execute, :gonogo:execute?, :gonogo:execute_, :gon:exec, :gon:exec?, :gon:exec_
+.ad
+.TP
+.B :GONogo:FUNCtion
+.na
+:gonogo:function, :gonogo:function?, :gonogo:function_, :gon:func, :gon:func?, :gon:func_
+.ad
+.TP
+.B :GONogo:NGCount
+.na
+:gonogo:ngcount?, :gonogo:ngcount_, :gon:ngc?, :gon:ngc_
+.ad
+.TP
+.B :GONogo:NGDefine
+.na
+:gonogo:ngdefine, :gonogo:ngdefine?, :gonogo:ngdefine_, :gon:ngd, :gon:ngd?, :gon:ngd_
+.ad
+.TP
+.B :GONogo:SOURce
+.na
+:gonogo:source, :gonogo:source?, :gonogo:source_, :gon:sour, :gon:sour?, :gon:sour_
+.ad
+.TP
+.B :GONogo:VIOLation
+.na
+:gonogo:violation, :gonogo:violation?, :gonogo:violation_, :gon:viol, :gon:viol?, :gon:viol_
+.ad
+.TP
+.B :HARDcopy:INKSaver
+.na
+:hardcopy:inksaver, :hardcopy:inksaver?, :hardcopy:inksaver_, :hard:inks, :hard:inks?, :hard:inks_
+.ad
+.TP
+.B :HARDcopy:LAYout
+.na
+:hardcopy:layout, :hardcopy:layout?, :hardcopy:layout_, :hard:lay, :hard:lay?, :hard:lay_
+.ad
+.TP
+.B :HARDcopy:MODe
+.na
+:hardcopy:mode, :hardcopy:mode?, :hardcopy:mode_, :hard:mod, :hard:mod?, :hard:mod_
+.ad
+.TP
+.B :HARDcopy:RATio
+.na
+:hardcopy:ratio, :hardcopy:ratio?, :hardcopy:ratio_, :hard:rat, :hard:rat?, :hard:rat_
+.ad
+.TP
+\fB:MEASure:DELAY<X>\fP \- Second source for delay measurements.
+.na
+:measure:delay1, :measure:delay1?, :measure:delay1_, :meas:delay1, :meas:delay1?, :meas:delay1_, :measure:delay2, :measure:delay2?, :measure:delay2_, :meas:delay2, :meas:delay2?, :meas:delay2_
+.ad
+.TP
+\fB:MEASure:FALL\fP \- First pulse falling edge measurement.
+.na
+:measure:fall?, :measure:fall_, :meas:fall?, :meas:fall_
+.ad
+.TP
+\fB:MEASure:FFFDelay\fP \- Delay between two falling edges of two sources.
+.na
+:measure:fffdelay?, :measure:fffdelay_, :meas:fffd?, :meas:fffd_
+.ad
+.TP
+\fB:MEASure:FFRDelay\fP \- Delay between first falling edge and first rising edge of two sources.
+.na
+:measure:ffrdelay?, :measure:ffrdelay_, :meas:ffrd?, :meas:ffrd_
+.ad
+.TP
+\fB:MEASure:FOVShoot\fP \- High to low state low undershot.
+.na
+:measure:fovshoot?, :measure:fovshoot_, :meas:fovs?, :meas:fovs_
+.ad
+.TP
+\fB:MEASure:FPReshoot\fP \- High to low state high overshot.
+.na
+:measure:fpreshoot?, :measure:fpreshoot_, :meas:fpr?, :meas:fpr_
+.ad
+.TP
+\fB:MEASure:FREQuency\fP \- Estimated signal frequency.
+.na
+:measure:frequency?, :measure:frequency_, :meas:freq?, :meas:freq_
+.ad
+.TP
+\fB:MEASure:FRFDelay\fP \- Delay between first rising edge and first falling edge of two sources.
+.na
+:measure:frfdelay?, :measure:frfdelay_, :meas:frfd?, :meas:frfd_
+.ad
+.TP
+\fB:MEASure:FRRDelay\fP \- Delay between first rising edges of two sources.
+.na
+:measure:frrdelay?, :measure:frrdelay_, :meas:frrd?, :meas:frrd_
+.ad
+.TP
+\fB:MEASure:LFFDelay\fP \- Delay between first falling edge and last falling edge of two sources.
+.na
+:measure:lffdelay?, :measure:lffdelay_, :meas:lffd?, :meas:lffd_
+.ad
+.TP
+\fB:MEASure:LFRDelay\fP \- Delay between first falling edge and last rising edge of two sources.
+.na
+:measure:lfrdelay?, :measure:lfrdelay_, :meas:lfrd?, :meas:lfrd_
+.ad
+.TP
+\fB:MEASure:LRFDelay\fP \- Delay between first rising and last falling edge of two sources.
+.na
+:measure:lrfdelay?, :measure:lrfdelay_, :meas:lrfd?, :meas:lrfd_
+.ad
+.TP
+\fB:MEASure:LRRDelay\fP \- Delay between first rising and last rising edge of two sources.
+.na
+:measure:lrrdelay?, :measure:lrrdelay_, :meas:lrrd?, :meas:lrrd_
+.ad
+.TP
+\fB:MEASure:NWIDth\fP \- Width of first negative pulse in the waveform.
+.na
+:measure:nwidth?, :measure:nwidth_, :meas:nwid?, :meas:nwid_
+.ad
+.TP
+\fB:MEASure:PDUTy\fP \- Duty cycle.
+.na
+:measure:pduty?, :measure:pduty_, :meas:pdut?, :meas:pdut_
+.ad
+.TP
+\fB:MEASure:PERiod\fP \- Signal period.
+.na
+:measure:period?, :measure:period_, :meas:per?, :meas:per_
+.ad
+.TP
+\fB:MEASure:PWIDth\fP \- Positive pulse width.
+.na
+:measure:pwidth?, :measure:pwidth_, :meas:pwid?, :meas:pwid_
+.ad
+.TP
+\fB:MEASure:RISe\fP \- Rising edge time of first pulse.
+.na
+:measure:rise?, :measure:rise_, :meas:ris?, :meas:ris_
+.ad
+.TP
+\fB:MEASure:ROVShoot\fP \- Low to high state high overshot.
+.na
+:measure:rovshoot?, :measure:rovshoot_, :meas:rovs?, :meas:rovs_
+.ad
+.TP
+\fB:MEASure:RPReshoot\fP \- Low to high state low undershot.
+.na
+:measure:rpreshoot?, :measure:rpreshoot_, :meas:rpr?, :meas:rpr_
+.ad
+.TP
+\fB:MEASure:SOURce\fP \- Measurement channel.
+.na
+:measure:source, :measure:source?, :measure:source_, :meas:sour, :meas:sour?, :meas:sour_
+.ad
+.TP
+\fB:MEASure:VAMPlitude\fP \- Amplitude value.
+.na
+:measure:vamplitude?, :measure:vamplitude_, :meas:vamp?, :meas:vamp_
+.ad
+.TP
+\fB:MEASure:VAVerage\fP \- Average voltage.
+.na
+:measure:vaverage?, :measure:vaverage_, :meas:vav?, :meas:vav_
+.ad
+.TP
+\fB:MEASure:VHI\fP \- Largest voltage in waveform.
+.na
+:measure:vhi?, :measure:vhi_, :meas:vhi?, :meas:vhi_
+.ad
+.TP
+\fB:MEASure:VLO\fP \- Lowest voltage in waveform.
+.na
+:measure:vlo?, :measure:vlo_, :meas:vlo?, :meas:vlo_
+.ad
+.TP
+\fB:MEASure:VMAX\fP \- Maximum value of amplitude.
+.na
+:measure:vmax?, :measure:vmax_, :meas:vmax?, :meas:vmax_
+.ad
+.TP
+\fB:MEASure:VMIN\fP \- Minimum value of amplitude.
+.na
+:measure:vmin?, :measure:vmin_, :meas:vmin?, :meas:vmin_
+.ad
+.TP
+\fB:MEASure:VPP\fP \- Peak-to peak voltage.
+.na
+:measure:vpp?, :measure:vpp_, :meas:vpp?, :meas:vpp_
+.ad
+.TP
+\fB:MEASure:VRMS\fP \- Root mean square voltage of signal.
+.na
+:measure:vrms?, :measure:vrms_, :meas:vrms?, :meas:vrms_
+.ad
+.TP
+\fB:MEMory<X>:RECall:SETup\fP \- Recall saved setup.
+.na
+:memory1:recall:setup, :mem1:rec:set, :memory2:recall:setup, :mem2:rec:set, :memory3:recall:setup, :mem3:rec:set, :memory4:recall:setup, :mem4:rec:set, :memory5:recall:setup, :mem5:rec:set, :memory6:recall:setup, :mem6:rec:set, :memory7:recall:setup, :mem7:rec:set, :memory8:recall:setup, :mem8:rec:set, :memory9:recall:setup, :mem9:rec:set, :memory10:recall:setup, :mem10:rec:set, :memory11:recall:setup, :mem11:rec:set, :memory12:recall:setup, :mem12:rec:set, :memory13:recall:setup, :mem13:rec:set, :memory14:recall:setup, :mem14:rec:set, :memory15:recall:setup, :mem15:rec:set, :memory16:recall:setup, :mem16:rec:set, :memory17:recall:setup, :mem17:rec:set, :memory18:recall:setup, :mem18:rec:set, :memory19:recall:setup, :mem19:rec:set, :memory20:recall:setup, :mem20:rec:set
+.ad
+.TP
+\fB:MEMory<X>:RECall:WAVeform\fP \- Recall reference waveform.
+.na
+:memory1:recall:waveform, :mem1:rec:wav, :memory2:recall:waveform, :mem2:rec:wav, :memory3:recall:waveform, :mem3:rec:wav, :memory4:recall:waveform, :mem4:rec:wav, :memory5:recall:waveform, :mem5:rec:wav, :memory6:recall:waveform, :mem6:rec:wav, :memory7:recall:waveform, :mem7:rec:wav, :memory8:recall:waveform, :mem8:rec:wav, :memory9:recall:waveform, :mem9:rec:wav, :memory10:recall:waveform, :mem10:rec:wav, :memory11:recall:waveform, :mem11:rec:wav, :memory12:recall:waveform, :mem12:rec:wav, :memory13:recall:waveform, :mem13:rec:wav, :memory14:recall:waveform, :mem14:rec:wav, :memory15:recall:waveform, :mem15:rec:wav, :memory16:recall:waveform, :mem16:rec:wav, :memory17:recall:waveform, :mem17:rec:wav, :memory18:recall:waveform, :mem18:rec:wav, :memory19:recall:waveform, :mem19:rec:wav, :memory20:recall:waveform, :mem20:rec:wav
+.ad
+.TP
+\fB:MEMory<X>:SAVe:SETup\fP \- Store current setup.
+.na
+:memory1:save:setup, :mem1:sav:set, :memory2:save:setup, :mem2:sav:set, :memory3:save:setup, :mem3:sav:set, :memory4:save:setup, :mem4:sav:set, :memory5:save:setup, :mem5:sav:set, :memory6:save:setup, :mem6:sav:set, :memory7:save:setup, :mem7:sav:set, :memory8:save:setup, :mem8:sav:set, :memory9:save:setup, :mem9:sav:set, :memory10:save:setup, :mem10:sav:set, :memory11:save:setup, :mem11:sav:set, :memory12:save:setup, :mem12:sav:set, :memory13:save:setup, :mem13:sav:set, :memory14:save:setup, :mem14:sav:set, :memory15:save:setup, :mem15:sav:set, :memory16:save:setup, :mem16:sav:set, :memory17:save:setup, :mem17:sav:set, :memory18:save:setup, :mem18:sav:set, :memory19:save:setup, :mem19:sav:set, :memory20:save:setup, :mem20:sav:set
+.ad
+.TP
+\fB:MEMory<X>:SAVe:WAVeform\fP \- Store current waveform.
+.na
+:memory1:save:waveform, :mem1:sav:wav, :memory2:save:waveform, :mem2:sav:wav, :memory3:save:waveform, :mem3:sav:wav, :memory4:save:waveform, :mem4:sav:wav, :memory5:save:waveform, :mem5:sav:wav, :memory6:save:waveform, :mem6:sav:wav, :memory7:save:waveform, :mem7:sav:wav, :memory8:save:waveform, :mem8:sav:wav, :memory9:save:waveform, :mem9:sav:wav, :memory10:save:waveform, :mem10:sav:wav, :memory11:save:waveform, :mem11:sav:wav, :memory12:save:waveform, :mem12:sav:wav, :memory13:save:waveform, :mem13:sav:wav, :memory14:save:waveform, :mem14:sav:wav, :memory15:save:waveform, :mem15:sav:wav, :memory16:save:waveform, :mem16:sav:wav, :memory17:save:waveform, :mem17:sav:wav, :memory18:save:waveform, :mem18:sav:wav, :memory19:save:waveform, :mem19:sav:wav, :memory20:save:waveform, :mem20:sav:wav
+.ad
+.TP
+\fB:PRINt\fP \- Print hardcopy.
+.na
+:print, :print?, :print_, :prin, :prin?, :prin_
+.ad
+.TP
+\fB:REF<X>:DISPlay\fP \- Select and display reference waveform.
+.na
+:ref1:display, :ref1:display?, :ref1:display_, :ref1:disp, :ref1:disp?, :ref1:disp_, :ref2:display, :ref2:display?, :ref2:display_, :ref2:disp, :ref2:disp?, :ref2:disp_, :ref3:display, :ref3:display?, :ref3:display_, :ref3:disp, :ref3:disp?, :ref3:disp_, :ref4:display, :ref4:display?, :ref4:display_, :ref4:disp, :ref4:disp?, :ref4:disp_
+.ad
+.TP
+\fB:REF<X>:LOCate\fP \- Reference waveform storage location.
+.na
+:ref1:locate, :ref1:locate?, :ref1:locate_, :ref1:loc, :ref1:loc?, :ref1:loc_, :ref2:locate, :ref2:locate?, :ref2:locate_, :ref2:loc, :ref2:loc?, :ref2:loc_, :ref3:locate, :ref3:locate?, :ref3:locate_, :ref3:loc, :ref3:loc?, :ref3:loc_, :ref4:locate, :ref4:locate?, :ref4:locate_, :ref4:loc, :ref4:loc?, :ref4:loc_
+.ad
+.TP
+\fB:REF<X>:SAVe\fP \- Save waveform as reference waveform.
+.na
+:ref1:save, :ref1:sav, :ref2:save, :ref2:sav, :ref3:save, :ref3:sav, :ref4:save, :ref4:sav
+.ad
+.TP
+\fB:REFResh\fP \- Refresh display.
+.na
+:refresh, :refr
+.ad
+.TP
+\fB:RUN\fP \- Run (start trigger).
+.na
+:run
+.ad
+.TP
+\fB:SINGle\fP \- Select single trigger mode.
+.na
+:single, :sing
+.ad
+.TP
+\fB:STOP\fP \- Stop waiting for a trigger condition. Freeze display.
+.na
+:stop
+.ad
+.TP
+\fB:SYSTem:DATe\fP \- Oscilloscope's date.
+.na
+:system:date, :system:date?, :system:date_, :syst:dat, :syst:dat?, :syst:dat_
+.ad
+.TP
+\fB:SYSTem:ERRor\fP \- System error information.
+.na
+:system:error?, :system:error_, :syst:err?, :syst:err_
+.ad
+.TP
+\fB:SYSTem:TIMe\fP \- Oscilloscope's time.
+.na
+:system:time, :system:time?, :system:time_, :syst:tim, :syst:tim?, :syst:tim_
+.ad
+.TP
+.B :SYSTem:UNLock
+.na
+:system:unlock, :system:unlock?, :system:unlock_, :syst:unl, :syst:unl?, :syst:unl_
+.ad
+.TP
+\fB:SYSTem:VERSion\fP \- GDS-2000 series: SCPI version. GDS-1000: Firmware version.
+.na
+:system:version?, :system:version_, :syst:vers?, :syst:vers_
+.ad
+.TP
+.B :TEMPlate:MAX
+.na
+:template:max, :template:max?, :template:max_, :temp:max, :temp:max?, :temp:max_
+.ad
+.TP
+.B :TEMPlate:MIN
+.na
+:template:min, :template:min?, :template:min_, :temp:min, :temp:min?, :temp:min_
+.ad
+.TP
+.B :TEMPlate:MODe
+.na
+:template:mode, :template:mode?, :template:mode_, :temp:mod, :temp:mod?, :temp:mod_
+.ad
+.TP
+.B :TEMPlate:POSition:MAX
+.na
+:template:position:max, :template:position:max?, :template:position:max_, :temp:pos:max, :temp:pos:max?, :temp:pos:max_
+.ad
+.TP
+.B :TEMPlate:POSition:MIN
+.na
+:template:position:min, :template:position:min?, :template:position:min_, :temp:pos:min, :temp:pos:min?, :temp:pos:min_
+.ad
+.TP
+.B :TEMPlate:SAVe:AUTo
+.na
+:template:save:auto, :temp:sav:aut
+.ad
+.TP
+.B :TEMPlate:SAVe:MAXimum
+.na
+:template:save:maximum, :temp:sav:max
+.ad
+.TP
+.B :TEMPlate:SAVe:MINimum
+.na
+:template:save:minimum, :temp:sav:min
+.ad
+.TP
+.B :TEMPlate:TOLerance
+.na
+:template:tolerance, :template:tolerance?, :template:tolerance_, :temp:tol, :temp:tol?, :temp:tol_
+.ad
+.TP
+\fB:TIMebase:DELay\fP \- Horizontal position.
+.na
+:timebase:delay, :timebase:delay?, :timebase:delay_, :tim:del, :tim:del?, :tim:del_
+.ad
+.TP
+\fB:TIMebase:SCALe\fP \- Horizontal scale.
+.na
+:timebase:scale, :timebase:scale?, :timebase:scale_, :tim:scal, :tim:scal?, :tim:scal_
+.ad
+.TP
+\fB:TIMebase:SWEep\fP \- Horiyontal display mode.
+.na
+:timebase:sweep, :timebase:sweep?, :timebase:sweep_, :tim:swe, :tim:swe?, :tim:swe_
+.ad
+.TP
+\fB:TIMebase:WINDow:DELay\fP \- Horizontal zoom window position.
+.na
+:timebase:window:delay, :timebase:window:delay?, :timebase:window:delay_, :tim:wind:del, :tim:wind:del?, :tim:wind:del_
+.ad
+.TP
+\fB:TIMebase:WINDow:SCALe\fP \- Horizontal zoom window width.
+.na
+:timebase:window:scale, :timebase:window:scale?, :timebase:window:scale_, :tim:wind:scal, :tim:wind:scal?, :tim:wind:scal_
+.ad
+.TP
+.B :TRIGger:ADVance
+.na
+:trigger:advance, :trigger:advance?, :trigger:advance_, :trig:adv, :trig:adv?, :trig:adv_
+.ad
+.TP
+\fB:TRIGger:COUPle\fP \- Coupling of the trigger.
+.na
+:trigger:couple, :trigger:couple?, :trigger:couple_, :trig:coup, :trig:coup?, :trig:coup_
+.ad
+.TP
+.B :TRIGger:DELay
+.na
+:trigger:delay, :trigger:delay?, :trigger:delay_, :trig:del, :trig:del?, :trig:del_
+.ad
+.TP
+\fB:TRIGger:DELay:EVENt\fP \- User-defined delay trigger events.
+.na
+:trigger:delay:event, :trigger:delay:event?, :trigger:delay:event_, :trig:del:even, :trig:del:even?, :trig:del:even_
+.ad
+.TP
+\fB:TRIGger:DELay:LEVel\fP \- User-defined trigger level.
+.na
+:trigger:delay:level, :trigger:delay:level?, :trigger:delay:level_, :trig:del:lev, :trig:del:lev?, :trig:del:lev_
+.ad
+.TP
+\fB:TRIGger:DELay:MODe\fP \- Delay mode (user-defined or otherwise)
+.na
+:trigger:delay:mode, :trigger:delay:mode?, :trigger:delay:mode_, :trig:del:mod, :trig:del:mod?, :trig:del:mod_
+.ad
+.TP
+\fB:TRIGger:DELay:TIMe\fP \- User-defined delay trigger time.
+.na
+:trigger:delay:time, :trigger:delay:time?, :trigger:delay:time_, :trig:del:tim, :trig:del:tim?, :trig:del:tim_
+.ad
+.TP
+\fB:TRIGger:DELay:TYPe\fP \- Trigger delay mode (time, event).
+.na
+:trigger:delay:type, :trigger:delay:type?, :trigger:delay:type_, :trig:del:typ, :trig:del:typ?, :trig:del:typ_
+.ad
+.TP
+.B :TRIGger:EVENt
+.na
+:trigger:event, :trigger:event?, :trigger:event_, :trig:even, :trig:even?, :trig:even_
+.ad
+.TP
+.B :TRIGger:FIELd
+.na
+:trigger:field, :trigger:field?, :trigger:field_, :trig:fiel, :trig:fiel?, :trig:fiel_
+.ad
+.TP
+\fB:TRIGger:FREQuency\fP \- Trigger frequency.
+.na
+:trigger:frequency?, :trigger:frequency_, :trig:freq?, :trig:freq_
+.ad
+.TP
+\fB:TRIGger:LEVel\fP \- Trigger level.
+.na
+:trigger:level, :trigger:level?, :trigger:level_, :trig:lev, :trig:lev?, :trig:lev_
+.ad
+.TP
+.B :TRIGger:LINe
+.na
+:trigger:line, :trigger:line?, :trigger:line_, :trig:lin, :trig:lin?, :trig:lin_
+.ad
+.TP
+\fB:TRIGger:MODe\fP \- Trigger mode.
+.na
+:trigger:mode, :trigger:mode?, :trigger:mode_, :trig:mod, :trig:mod?, :trig:mod_
+.ad
+.TP
+\fB:TRIGger:NREJ\fP \- Trigger noise rejection mode.
+.na
+:trigger:nrej, :trigger:nrej?, :trigger:nrej_, :trig:nrej, :trig:nrej?, :trig:nrej_
+.ad
+.TP
+.B :TRIGger:POLarity
+.na
+:trigger:polarity, :trigger:polarity?, :trigger:polarity_, :trig:pol, :trig:pol?, :trig:pol_
+.ad
+.TP
+.B :TRIGger:PULSe
+.na
+:trigger:pulse, :trigger:pulse?, :trigger:pulse_, :trig:puls, :trig:puls?, :trig:puls_
+.ad
+.TP
+\fB:TRIGger:PULSe:MODe\fP \- Trigger pulse mode.
+.na
+:trigger:pulse:mode, :trigger:pulse:mode?, :trigger:pulse:mode_, :trig:puls:mod, :trig:puls:mod?, :trig:puls:mod_
+.ad
+.TP
+\fB:TRIGger:PULSe:TIMe\fP \- Tigger pulse width time.
+.na
+:trigger:pulse:time, :trigger:pulse:time?, :trigger:pulse:time_, :trig:puls:tim, :trig:puls:tim?, :trig:puls:tim_
+.ad
+.TP
+\fB:TRIGger:REJect\fP \- Trigger frequency rejection mode.
+.na
+:trigger:reject, :trigger:reject?, :trigger:reject_, :trig:rej, :trig:rej?, :trig:rej_
+.ad
+.TP
+\fB:TRIGger:SLOP\fP \- Trigger detection slope.
+.na
+:trigger:slop, :trigger:slop?, :trigger:slop_, :trig:slop, :trig:slop?, :trig:slop_
+.ad
+.TP
+\fB:TRIGger:SOURce\fP \- Trigger source.
+.na
+:trigger:source, :trigger:source?, :trigger:source_, :trig:sour, :trig:sour?, :trig:sour_
+.ad
+.TP
+.B :TRIGger:TIMe
+.na
+:trigger:time, :trigger:time?, :trigger:time_, :trig:tim, :trig:tim?, :trig:tim_
+.ad
+.TP
+.B :TRIGger:TV
+.na
+:trigger:tv, :trigger:tv?, :trigger:tv_, :trig:tv, :trig:tv?, :trig:tv_
+.ad
+.TP
+\fB:TRIGger:TYPe\fP \- Trigger type.
+.na
+:trigger:type, :trigger:type?, :trigger:type_, :trig:typ, :trig:typ?, :trig:typ_
+.ad
+.TP
+\fB:TRIGger:VIDeo:FIELd\fP \- Field on which to trigger in video mode.
+.na
+:trigger:video:field, :trigger:video:field?, :trigger:video:field_, :trig:vid:fiel, :trig:vid:fiel?, :trig:vid:fiel_
+.ad
+.TP
+\fB:TRIGger:VIDeo:LINe\fP \- Video line for triger
+.na
+:trigger:video:line, :trigger:video:line?, :trigger:video:line_, :trig:vid:lin, :trig:vid:lin?, :trig:vid:lin_
+.ad
+.TP
+.B :TRIGger:VIDeo:POLarity
+.na
+:trigger:video:polarity, :trigger:video:polarity?, :trigger:video:polarity_, :trig:vid:pol, :trig:vid:pol?, :trig:vid:pol_
+.ad
+.TP
+.B :TRIGger:VIDeo:TYPe
+.na
+:trigger:video:type, :trigger:video:type?, :trigger:video:type_, :trig:vid:typ, :trig:vid:typ?, :trig:vid:typ_
+.ad
+.TP
+.B :USB:RECall:SETup
+.na
+:usb:recall:setup, :usb:rec:set
+.ad
+.TP
+.B :USB:RECall:WAVeform
+.na
+:usb:recall:waveform, :usb:rec:wav
+.ad
+.TP
+.B :USB:SAVe:ALL
+.na
+:usb:save:all, :usb:sav:all
+.ad
+.TP
+.B :USB:SAVe:IMAGe
+.na
+:usb:save:image, :usb:sav:imag
+.ad
+.TP
+.B :USB:SAVe:SETup
+.na
+:usb:save:setup, :usb:sav:set
+.ad
+.TP
+.B :USB:SAVe:WAVeform
+.na
+:usb:save:waveform, :usb:sav:wav
+.ad
+.TP
+\fB:WMEMory<X>:DISPlay\fP \- (GDS-8x0 only)
+.na
+:wmemory1:display, :wmemory1:display?, :wmemory1:display_, :wmem1:disp, :wmem1:disp?, :wmem1:disp_, :wmemory2:display, :wmemory2:display?, :wmemory2:display_, :wmem2:disp, :wmem2:disp?, :wmem2:disp_
+.ad
+.TP
+.B :WMEMory<X>:ERASe
+.na
+:wmemory1:erase, :wmemory1:erase?, :wmemory1:erase_, :wmem1:eras, :wmem1:eras?, :wmem1:eras_, :wmemory2:erase, :wmemory2:erase?, :wmemory2:erase_, :wmem2:eras, :wmem2:eras?, :wmem2:eras_
+.ad
+.TP
+.B :WMEMory<X>:LOCate
+.na
+:wmemory1:locate, :wmemory1:locate?, :wmemory1:locate_, :wmem1:loc, :wmem1:loc?, :wmem1:loc_, :wmemory2:locate, :wmemory2:locate?, :wmemory2:locate_, :wmem2:loc, :wmem2:loc?, :wmem2:loc_
+.ad
+.TP
+.B :WMEMory<X>:OFFSet
+.na
+:wmemory1:offset, :wmemory1:offset?, :wmemory1:offset_, :wmem1:offs, :wmem1:offs?, :wmem1:offs_, :wmemory2:offset, :wmemory2:offset?, :wmemory2:offset_, :wmem2:offs, :wmem2:offs?, :wmem2:offs_
+.ad
+.TP
+.B :WMEMory<X>:SAVe
+.na
+:wmemory1:save, :wmemory1:save?, :wmemory1:save_, :wmem1:sav, :wmem1:sav?, :wmem1:sav_, :wmemory2:save, :wmemory2:save?, :wmemory2:save_, :wmem2:sav, :wmem2:sav?, :wmem2:sav_
+.ad
+.PP
+In total 1155 functions are provided by
+.B gdsh
+for 157 oscilloscope commands.
+Which of these commands an oscilloscope understands depends on the
+oscilloscope's type and firmware version.
+.\"
+.\"
+.\"
+.SH FILES
+.\"
+.TP 10
+.I lib/gdsh.commands
+Contains the implementation of the oscilloscope commands as
+.B bash
+functions. The function definitions are loaded by
+.I lib/gdsh.init
+at shell startup.
+.\"
+.\"
+.\"
+.SH SEE ALSO
+.BR gdsh (1).
+.PP
+SCPI Consortium <http://www.scpiconsortium.org/>
+.PP
+.na
+.I GDS-806/810/820/840 Programming Manual.
+VA. Good Will Instrument Co., Ltd. 2006/5/25.
+.\" <http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=255&uid=&lv=>
+.ad
+.PP
+.na
+.I GDS-1000 Series Programming Manual.
+V0. Good Will Instrument Co., Ltd. 2007/11/20.
+.\" http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=371&uid=&lv=>
+.ad
+.PP
+.na
+.I GDS-2000 Series Programming Manual.
+V0. Good Will Instrument Co., Ltd. 2006/12/13.
+.\" <http://www.gwinstek.com.tw/html/en/DownloadFile.asp?sn=302&uid=&lv=>
+.ad
+.\"
+.\"
+.\"
+.SH COPYRIGHT
+Copyright \(co 2008 Thomas Weidenfeller
+.PP
+gds2000tools/gdsh is free software: you can redistribute it and/or modify
+it under the terms of the \s-1GNU\s0 General Public License version
+.B 3
+as published by the Free Software Foundation.
+.PP
+gds2000tools/gdsh is distributed in the hope that it will be useful,
+but \s-1WITHOUT\s0 \s-1ANY\s0 \&\s-1WARRANTY\s0; without even the
+implied warranty of \s-1MERCHANTABILITY\s0 or \s-1FITNESS\s0 \s-1FOR\s0
+A \&\s-1PARTICULAR\s0 \s-1PURPOSE\s0. See the \s-1GNU\s0 General Public
+License for more details.
+.PP
+You should have received a copy of the GNU General Public License along
+with gds2000tools/gdsh. If not, see <http://www.gnu.org/licenses/>.

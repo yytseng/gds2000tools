@@ -1,0 +1,7 @@
+gds-read-bin.o: gds-read-bin.c gds-read-bin.h memory-list.h \
+  snapshot-bmp.h tty.h error.h
+memory-list.o: memory-list.c gds-read-bin.h read.h tty.h error.h
+snapshot-bmp.o: snapshot-bmp.c snapshot-bmp.h read.h error.h
+read.o: read.c read.h error.h
+tty.o: tty.c tty.h
+error.o: error.c gds-read-bin.h tty.h
